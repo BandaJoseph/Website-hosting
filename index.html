@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zambia Water & Sanitation Survey</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="container">
+    <h1>Zambia Water & Sanitation Survey</h1>
+
+    <div id="startScreen">
+      <p>Select your province, district, age, and gender to begin:</p>
+      
+      <select id="provinceSelect" onchange="updateDistricts()">
+        <option value="">-- Select Province --</option>
+        <option value="Central">Central</option>
+        <option value="Copperbelt">Copperbelt</option>
+        <option value="Eastern">Eastern</option>
+        <option value="Luapula">Luapula</option>
+        <option value="Lusaka">Lusaka</option>
+        <option value="Muchinga">Muchinga</option>
+        <option value="Northern">Northern</option>
+        <option value="North-Western">North-Western</option>
+        <option value="Southern">Southern</option>
+        <option value="Western">Western</option>
+      </select>
+
+      <br><br>
+
+      <select id="districtSelect">
+        <option value="">-- Select District --</option>
+      </select>
+
+      <br><br>
+
+      <input type="number" id="ageInput" placeholder="Enter your age" min="1" max="120">
+
+      <br><br>
+
+      <select id="genderSelect">
+        <option value="">-- Select Gender --</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Other">Other</option>
+      </select>
+
+      <br><br>
+      <button onclick="startSurvey()">Start Survey</button>
+    </div>
+
+    <div id="survey" style="display:none;">
+      <h3 id="provinceName"></h3>
+      <div id="questionContainer"></div>
+    </div>
+
+    <div class="summary" id="summaryScreen" style="display:none;">
+      <h2>Survey Complete ✅</h2>
+      <p id="summaryText"></p>
+      <button onclick="restart()">Take Again</button>
+    </div>
+  </div>
+
+  <script>
+    const questions = [
+      "Do you have access to clean drinking water?",
+      "Is water available throughout the year?",
+      "Do you use treated water for drinking?",
+      "Do households have proper toilets?",
+      "Is waste disposed of safely?",
+      "Are boreholes or wells protected from contamination?",
+      "Do you wash hands with soap regularly?",
+      "Is there a drainage system in your area?",
+      "Is the water source far from your home?",
+      "Is your water source shared with animals?",
+      "Do you experience water borne diseases?"
+    ];
+
+    const districtsByProvince = {
+      "Central": ["Chibombo", "Chisamba", "Kabwe", "Kapiri Mposhi", "Mkushi", "Mumbwa", "Ngabwe", "Serenje"],
+      "Copperbelt": ["Chililabombwe", "Chingola", "Kalulushi", "Kitwe", "Lufwanyama", "Luanshya", "Masaiti", "Mufulira", "Ndola"],
+      "Eastern": ["Chadiza", "Chama", "Chipata", "Katete", "Lundazi", "Mambwe", "Nyimba", "Vubwi"],
+      "Luapula": ["Chienge", "Mansa", "Milenge", "Mwansabombwe", "Nchelenge", "Samfya", "Chembe"],
+      "Lusaka": ["Chilanga", "Kafue", "Luangwa", "Lusaka", "Rufunsa", "Shibuyunji"],
+      "Muchinga": ["Chinsali", "Isoka", "Mpika", "Nakonde", "Lavushimanda", "Kanchibiya"],
+      "Northern": ["Kaputa", "Kasama", "Luwingu", "Mbala", "Mporokoso", "Mpulungu", "Senga Hill"],
+      "North-Western": ["Chavuma", "Kabompo", "Kasempa", "Mufumbwe", "Solwezi", "Zambezi", "Manyinga"],
+      "Southern": ["Choma", "Gwembe", "Kalomo", "Kazungula", "Livingstone", "Mazabuka", "Monze", "Namwala", "Siavonga", "Sinazongwe"],
+      "Western": ["Kaoma", "Kalabo", "Limulunga", "Mongu", "Senanga", "Sesheke", "Sioma", "Nalolo"]
+    };
+
+    let current = 0;
+    let answers = [];
+    let province = "";
+    let age = 0;
+    let gender = "";
+
+    function updateDistricts() {
+      const province = document.getElementById("provinceSelect").value;
+      const districtSelect = document.getElementById("districtSelect");
+
+      districtSelect.innerHTML = '<option value="">-- Select District --</option>';
+
+      if (!province) return;
+
+     
+      if (districtsByProvince[province]) {
+        districtsByProvince[province].forEach(district => {
+          const option = document.createElement("option");
+          option.value = district;
+          option.textContent = district;
+          districtSelect.appendChild(option);
+        });
+      }
+    }
+
+    function startSurvey() {
+      const selectedProvince = document.getElementById("provinceSelect").value;
+      const selectedDistrict = document.getElementById("districtSelect").value;
+      const ageInput = document.getElementById("ageInput").value;
+      const genderInput = document.getElementById("genderSelect").value;
+
+      if (!selectedProvince) return alert("Please select a province!");
+      if (!selectedDistrict) return alert("Please select a district!");
+      if (!ageInput || ageInput <= 0) return alert("Please enter a valid age!");
+      if (!genderInput) return alert("Please select your gender!");
+
+      province = `${selectedProvince} - ${selectedDistrict}`;
+      age = ageInput;
+      gender = genderInput;
+
+      document.getElementById("startScreen").style.display = "none";
+      document.getElementById("survey").style.display = "block";
+      document.getElementById("provinceName").textContent = `${province} Survey (Age: ${age}, Gender: ${gender})`;
+      showQuestion();
+    }
+
+    function showQuestion() {
+      const container = document.getElementById("questionContainer");
+      container.innerHTML = `
+        <div class="question active">
+          <p><b>Question ${current + 1} of ${questions.length}</b></p>
+          <p>${questions[current]}</p>
+          <button class="btn yes" onclick="answer(true)">Yes</button>
+          <button class="btn no" onclick="answer(false)">No</button>
+        </div>
+      `;
+    }
+
+    function answer(val) {
+      answers.push(val);
+      current++;
+
+      if (current < questions.length) {
+        showQuestion();
+      } else {
+        endSurvey();
+      }
+    }
+
+    function endSurvey() {
+      document.getElementById("survey").style.display = "none";
+      const yesCount = answers.filter(a => a).length;
+      const percent = Math.round((yesCount / questions.length) * 100);
+      document.getElementById("summaryScreen").style.display = "block";
+      document.getElementById("summaryText").textContent =
+        `In ${province}, Age: ${age}, Gender: ${gender}, ${percent}% of answers were positive. Thank you for participating!`;
+    }
+
+    function restart() {
+      current = 0;
+      answers = [];
+      province = "";
+      age = 0;
+      gender = "";
+      document.getElementById("summaryScreen").style.display = "none";
+      document.getElementById("startScreen").style.display = "block";
+      document.getElementById("provinceSelect").value = "";
+      document.getElementById("districtSelect").innerHTML = '<option value="">-- Select District --</option>';
+      document.getElementById("ageInput").value = "";
+      document.getElementById("genderSelect").value = "";
+    }
+  </script>
+
+</body>
+</html>
